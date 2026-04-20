@@ -19,7 +19,7 @@ import lombok.NoArgsConstructor;
                 @UniqueConstraint(name = "UK_CHARACTERS_NICKNAME", columnNames = {"nickname"})
         }
 )
-public class Character {
+public class MapleCharacter {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
