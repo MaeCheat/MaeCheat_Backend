@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/characters")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:5173")
 public class MapleCharacterController {
     private final MapleCharacterService mapleCharacterService;
 
