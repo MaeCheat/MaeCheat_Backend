@@ -11,7 +11,6 @@ public interface NexonApiClient {
 
     @GetExchange("/id")
     NexonOcidResponseDto getCharacterId(
-            @RequestHeader("${nexon.api.key}") String apiKey,
             @RequestParam("character_name") String characterName
     );
 }
