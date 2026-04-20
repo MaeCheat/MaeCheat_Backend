@@ -1,5 +1,6 @@
 package dev.shin.maecheat.infrastructure.nexon.client;
 
+import dev.shin.maecheat.infrastructure.nexon.dto.NexonCharacterBasicResponseDto;
 import dev.shin.maecheat.infrastructure.nexon.dto.NexonOcidResponseDto;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -12,5 +13,10 @@ public interface NexonApiClient {
     @GetExchange("/id")
     NexonOcidResponseDto getCharacterId(
             @RequestParam("character_name") String characterName
+    );
+
+    @GetExchange("/character/basic")
+    NexonCharacterBasicResponseDto getCharacterBasic(
+            @RequestParam("ocid") String ocid
     );
 }
