@@ -28,7 +28,6 @@ public class MapleCharacter {
     @Column(nullable = false)
     private String ocid;
 
-
     @Column(nullable = false)
     private String nickname;
 
