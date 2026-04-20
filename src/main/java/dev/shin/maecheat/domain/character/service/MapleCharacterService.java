@@ -14,6 +14,7 @@ public class MapleCharacterService {
     private final NexonApiClient nexonApiClient;
 
     public NexonCharacterBasicResponseDto getCharacterBasic(String nickname) {
+        // DB에 있으면 ocid 재사용, 없으면 조회 후 저장
         MapleCharacter character = mapleCharacterRepository.findByNickname(nickname)
                 .orElseGet(() -> {
                     String ocid = nexonApiClient.getCharacterId(nickname).ocid();
