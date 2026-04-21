@@ -6,7 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/characters")
+@RequestMapping("/maple-characters")
 @RequiredArgsConstructor
 public class MapleCharacterController {
     private final MapleCharacterService mapleCharacterService;

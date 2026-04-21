@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(
-        name = "characters",
+        name = "maple_character",
         uniqueConstraints = {
                 // 제약조건 이름을 명확하게 지정하여 에러 로그에서 쉽게 식별 가능하도록 함
                 @UniqueConstraint(name = "UK_CHARACTERS_OCID", columnNames = {"ocid"}),
