@@ -29,14 +29,19 @@ public class ReportService {
 
     @Transactional
     public Report createReport(String nickname, String sourceUrl) {
-        if (reportRepository.existsBySourceUrl(sourceUrl)) {
-            throw new IllegalStateException("이미 등록된 URL입니다.");
-        }
-
         MapleCharacter character = mapleCharacterRepository.findByNickname(nickname)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 캐릭터입니다"));
 
+        if (reportRepository.existsBySourceUrlAndMapleCharacter(sourceUrl, character)) {
+            throw new IllegalStateException("이미 등록된 URL입니다.");
+        }
+
         WebScraper.ScrapedData scrapedData = webScraper.scrape(sourceUrl);
+
+        String combined = scrapedData.title() + " " + scrapedData.content();
+        if (!combined.contains(nickname)) {
+            throw new IllegalArgumentException("게시글에 해당 캐릭터 닉네임이 포함되어 있지 않습니다.");
+        }
 
         return reportRepository.save(
                 Report.builder()

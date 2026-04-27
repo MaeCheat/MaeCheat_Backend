@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 @Table(
         name = "report",
         uniqueConstraints = {
-                @UniqueConstraint(name = "UK_REPORT_SOURCE_URL", columnNames = {"source_url"})
+                @UniqueConstraint(name = "UK_REPORT_URL_CHARACTER", columnNames = {"source_url", "maple_character_id"})
         }
 )
 public class Report {
