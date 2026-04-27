@@ -3,13 +3,17 @@ package dev.shin.maecheat.domain.report.service;
 import dev.shin.maecheat.domain.character.model.MapleCharacter;
 import dev.shin.maecheat.domain.character.repository.MapleCharacterRepository;
 import dev.shin.maecheat.domain.report.model.Report;
+import dev.shin.maecheat.domain.report.model.Vote;
+import dev.shin.maecheat.domain.report.model.VoteType;
 import dev.shin.maecheat.domain.report.repository.ReportRepository;
+import dev.shin.maecheat.domain.report.repository.VoteRepository;
 import dev.shin.maecheat.infrastructure.scraper.WebScraper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -19,6 +23,7 @@ import java.util.List;
 public class ReportService {
     private final WebScraper webScraper;
     private final ReportRepository reportRepository;
+    private final VoteRepository voteRepository;
     private final MapleCharacterRepository mapleCharacterRepository;
 
     public List<Report> getReports(String nickname) {
@@ -28,18 +33,42 @@ public class ReportService {
     }
 
     @Transactional
-    public Report upvote(Long reportId) {
+    public Report vote(Long reportId, String voterIp, VoteType voteType) {
         Report report = reportRepository.findById(reportId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
-        report.upvote();
-        return report;
-    }
 
-    @Transactional
-    public Report downvote(Long reportId) {
-        Report report = reportRepository.findById(reportId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
-        report.downvote();
+        Optional<Vote> existingVote = voteRepository.findByReportAndVoterIp(report, voterIp);
+
+        if (existingVote.isPresent()) {
+            Vote vote = existingVote.get();
+
+            if (vote.getVoteType() == voteType) {
+                // 같은 버튼 다시 누름 → 투표 취소
+                voteRepository.delete(vote);
+                if (voteType == VoteType.UP) report.cancelUpvote();
+                else report.cancelDownvote();
+            } else {
+                // 반대 버튼 누름 → 전환
+                if (vote.getVoteType() == VoteType.UP) {
+                    report.cancelUpvote();
+                    report.downvote();
+                } else {
+                    report.cancelDownvote();
+                    report.upvote();
+                }
+                vote.changeVoteType(voteType);
+            }
+        } else {
+            // 첫 투표
+            voteRepository.save(Vote.builder()
+                    .report(report)
+                    .voterIp(voterIp)
+                    .voteType(voteType)
+                    .build());
+            if (voteType == VoteType.UP) report.upvote();
+            else report.downvote();
+        }
+
         return report;
     }
 

@@ -1,7 +1,9 @@
 package dev.shin.maecheat.domain.report.controller;
 
 import dev.shin.maecheat.domain.report.model.Report;
+import dev.shin.maecheat.domain.report.model.VoteType;
 import dev.shin.maecheat.domain.report.service.ReportService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,12 +30,20 @@ public class ReportController {
     }
 
     @PostMapping("/{reportId}/upvote")
-    public Report upvote(@PathVariable String nickname, @PathVariable Long reportId) {
-        return reportService.upvote(reportId);
+    public Report upvote(@PathVariable String nickname, @PathVariable Long reportId, HttpServletRequest request) {
+        return reportService.vote(reportId, getClientIp(request), VoteType.UP);
     }
 
     @PostMapping("/{reportId}/downvote")
-    public Report downvote(@PathVariable String nickname, @PathVariable Long reportId) {
-        return reportService.downvote(reportId);
+    public Report downvote(@PathVariable String nickname, @PathVariable Long reportId, HttpServletRequest request) {
+        return reportService.vote(reportId, getClientIp(request), VoteType.DOWN);
+    }
+
+    private String getClientIp(HttpServletRequest request) {
+        String forwarded = request.getHeader("X-Forwarded-For");
+        if (forwarded != null && !forwarded.isEmpty()) {
+            return forwarded.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
     }
 }
