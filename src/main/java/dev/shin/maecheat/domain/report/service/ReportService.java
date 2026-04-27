@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 // 클래스 단위로 읽기 전용 트랜잭션을 적용하여 성능 최적화
@@ -19,19 +21,23 @@ public class ReportService {
     private final ReportRepository reportRepository;
     private final MapleCharacterRepository mapleCharacterRepository;
 
+    public List<Report> getReports(String nickname) {
+        MapleCharacter character = mapleCharacterRepository.findByNickname(nickname)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 캐릭터입니다"));
+        return reportRepository.findByMapleCharacterId(character.getId());
+    }
+
     @Transactional
-    public Report createReport(Long mapleCharacterId, String sourceUrl) {
+    public Report createReport(String nickname, String sourceUrl) {
         if (reportRepository.existsBySourceUrl(sourceUrl)) {
             throw new IllegalStateException("이미 등록된 URL입니다.");
         }
 
-        MapleCharacter character = mapleCharacterRepository.findById(mapleCharacterId)
+        MapleCharacter character = mapleCharacterRepository.findByNickname(nickname)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 캐릭터입니다"));
 
-        // 스크래핑
         WebScraper.ScrapedData scrapedData = webScraper.scrape(sourceUrl);
 
-        // 쓰기
         return reportRepository.save(
                 Report.builder()
                         .mapleCharacter(character)
