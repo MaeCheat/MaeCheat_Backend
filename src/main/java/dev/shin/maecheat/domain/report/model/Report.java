@@ -32,7 +32,31 @@ public class Report {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
+    @Builder.Default
+    @Column(nullable = false)
+    private int upvotes = 0;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private int downvotes = 0;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "maple_character_id", nullable = false)
     private MapleCharacter mapleCharacter;
+
+    public void upvote() {
+        this.upvotes++;
+    }
+
+    public void downvote() {
+        this.downvotes++;
+    }
+
+    public int getScore() {
+        return upvotes - downvotes;
+    }
+
+    public boolean isHidden() {
+        return downvotes >= 5 && downvotes > upvotes * 2;
+    }
 }

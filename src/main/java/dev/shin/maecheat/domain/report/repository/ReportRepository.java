@@ -12,5 +12,5 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
 
     // 하나의 게시글이 여러 캐릭터에 등록될 수 있도록 sourceUrl과 mapleCharacter 조합으로 중복 체크
     boolean existsBySourceUrlAndMapleCharacter(String sourceUrl, MapleCharacter mapleCharacter);
-    List<Report> findByMapleCharacterId(Long mapleCharacterId);
+    List<Report> findByMapleCharacterIdOrderByUpvotesDesc(Long mapleCharacterId);
 }

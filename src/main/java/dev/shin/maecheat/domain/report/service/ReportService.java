@@ -24,7 +24,23 @@ public class ReportService {
     public List<Report> getReports(String nickname) {
         MapleCharacter character = mapleCharacterRepository.findByNickname(nickname)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 캐릭터입니다"));
-        return reportRepository.findByMapleCharacterId(character.getId());
+        return reportRepository.findByMapleCharacterIdOrderByUpvotesDesc(character.getId());
+    }
+
+    @Transactional
+    public Report upvote(Long reportId) {
+        Report report = reportRepository.findById(reportId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
+        report.upvote();
+        return report;
+    }
+
+    @Transactional
+    public Report downvote(Long reportId) {
+        Report report = reportRepository.findById(reportId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
+        report.downvote();
+        return report;
     }
 
     @Transactional

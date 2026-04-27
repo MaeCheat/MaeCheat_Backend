@@ -26,4 +26,14 @@ public class ReportController {
             @RequestBody ReportCreateRequest request) {
         return reportService.createReport(nickname, request.sourceUrl());
     }
+
+    @PostMapping("/{reportId}/upvote")
+    public Report upvote(@PathVariable String nickname, @PathVariable Long reportId) {
+        return reportService.upvote(reportId);
+    }
+
+    @PostMapping("/{reportId}/downvote")
+    public Report downvote(@PathVariable String nickname, @PathVariable Long reportId) {
+        return reportService.downvote(reportId);
+    }
 }
