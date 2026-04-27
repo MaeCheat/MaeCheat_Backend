@@ -40,7 +40,7 @@ public class ReportService {
 
         String combined = scrapedData.title() + " " + scrapedData.content();
         if (!combined.contains(nickname)) {
-            throw new IllegalArgumentException("게시글에 해당 캐릭터 닉네임이 포함되어 있지 않습니다.");
+            throw new IllegalArgumentException("게시글에 해당 캐릭터 닉네임이 포함되어 있지 않습니다. (캐릭터와 연관이 있는 게시물을 등록해 주세요)");
         }
 
         return reportRepository.save(
