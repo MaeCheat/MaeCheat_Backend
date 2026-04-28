@@ -37,4 +37,9 @@ public class MapleCharacter {
     public void updateNickname(String newNickname) {
         this.nickname = newNickname;
     }
+
+    // AI 요약 갱신
+    public void updateAiSummary(String aiSummary) {
+        this.aiSummary = aiSummary;
+    }
 }
