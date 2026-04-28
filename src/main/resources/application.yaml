@@ -10,6 +10,14 @@ spring:
     hibernate:
       ddl-auto: create
     show-sql: true
+  ai:
+    google:
+      ai:
+        gemini:
+          api-key: ${GEMINI_API_KEY}
+          chat:
+            options:
+              model: gemini-2.0-flash
 
 nexon:
   api:
