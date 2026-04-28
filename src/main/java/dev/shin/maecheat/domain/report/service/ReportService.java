@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 
@@ -72,15 +73,30 @@ public class ReportService {
         return report;
     }
 
+    private String stripQueryString(String url) {
+        try {
+            URI uri = URI.create(url);
+            // scheme://host:port/path (fragment도 제거)
+            URI clean = new URI(uri.getScheme(), uri.getAuthority(), uri.getPath(), null, null);
+            return clean.toString();
+        } catch (Exception e) {
+            return url;
+        }
+    }
+
     @Transactional
     public Report createReport(String nickname, String sourceUrl) {
         MapleCharacter character = mapleCharacterRepository.findByNickname(nickname)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 캐릭터입니다"));
 
-        if (reportRepository.existsBySourceUrlAndMapleCharacter(sourceUrl, character)) {
+        // 쿼리 스트링 제거한 URL로 중복 검사 수행
+        String cleanUrl = stripQueryString(sourceUrl);
+
+        if (reportRepository.existsBySourceUrlAndMapleCharacter(cleanUrl, character)) {
             throw new IllegalStateException("이미 등록된 URL입니다.");
         }
 
+        // 스크래핑은 원본 URL로 수행
         WebScraper.ScrapedData scrapedData = webScraper.scrape(sourceUrl);
 
         String combined = scrapedData.title() + " " + scrapedData.content();
@@ -91,7 +107,7 @@ public class ReportService {
         return reportRepository.save(
                 Report.builder()
                         .mapleCharacter(character)
-                        .sourceUrl(sourceUrl)
+                        .sourceUrl(cleanUrl) // 쿼리 스트링 제거한 URL 저장
                         .title(scrapedData.title())
                         .content(scrapedData.content())
                         .build()
