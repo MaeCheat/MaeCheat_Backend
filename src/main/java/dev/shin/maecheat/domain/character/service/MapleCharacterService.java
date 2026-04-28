@@ -1,5 +1,6 @@
 package dev.shin.maecheat.domain.character.service;
 
+import dev.shin.maecheat.domain.character.dto.CharacterResponse;
 import dev.shin.maecheat.domain.character.model.MapleCharacter;
 import dev.shin.maecheat.domain.character.repository.MapleCharacterRepository;
 import dev.shin.maecheat.infrastructure.nexon.client.NexonApiClient;
@@ -13,7 +14,7 @@ public class MapleCharacterService {
     private final MapleCharacterRepository mapleCharacterRepository;
     private final NexonApiClient nexonApiClient;
 
-    public NexonCharacterBasicResponseDto getCharacterBasic(String nickname) {
+    public CharacterResponse getCharacterBasic(String nickname) {
         // DB에 있으면 ocid 재사용, 없으면 조회 후 저장
         MapleCharacter character = mapleCharacterRepository.findByNickname(nickname)
                 .orElseGet(() -> {
@@ -25,6 +26,7 @@ public class MapleCharacterService {
                                     .build()
                     );
                 });
-        return nexonApiClient.getCharacterBasic(character.getOcid());
+        NexonCharacterBasicResponseDto nexon = nexonApiClient.getCharacterBasic(character.getOcid());
+        return CharacterResponse.of(nexon, character.getAiSummary());
     }
 }
