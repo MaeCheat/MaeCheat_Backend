@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -25,9 +27,34 @@ public class AiSummaryClient {
 
     private static final int TRIM_LENGTH = 200;
 
+    // 현재 요약 생성 중인 캐릭터 ID
+    private final Set<Long> running = ConcurrentHashMap.newKeySet();
+    // 실행 중에 추가 요청이 들어와서 재실행이 필요한 캐릭터 ID
+    private final Set<Long> pendingRerun = ConcurrentHashMap.newKeySet();
+
     @Async
-    @Transactional
     public void generateSummaryAsync(Long characterId) {
+        // 이미 실행 중이면 재실행 플래그만 세우고 리턴
+        if (!running.add(characterId)) {
+            pendingRerun.add(characterId);
+            log.info("AI 요약 이미 생성 중, 재실행 예약 (characterId={})", characterId);
+            return;
+        }
+
+        try {
+            doGenerateSummary(characterId);
+        } finally {
+            running.remove(characterId);
+            // 실행 중에 추가 요청이 있었으면 한 번 더 실행
+            if (pendingRerun.remove(characterId)) {
+                log.info("AI 요약 재실행 (characterId={})", characterId);
+                generateSummaryAsync(characterId);
+            }
+        }
+    }
+
+    @Transactional
+    public void doGenerateSummary(Long characterId) {
         try {
             MapleCharacter character = mapleCharacterRepository.findById(characterId).orElseThrow();
             List<Report> reports = reportRepository.findByMapleCharacterIdOrderByUpvotesDesc(characterId);
