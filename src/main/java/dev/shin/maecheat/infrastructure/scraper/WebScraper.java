@@ -23,7 +23,7 @@ public class WebScraper {
 
             return new ScrapedData(title, content);
         } catch (IOException e) {
-            throw new IllegalArgumentException("해당 URL에서 데이터를 가져올 수 없습니다: " + url, e);
+            throw new IllegalArgumentException("해당 URL에서 데이터를 가져올 수 없습니다. URL을 확인해주세요.");
         }
     }
 }

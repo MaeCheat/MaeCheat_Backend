@@ -107,9 +107,8 @@ public class ReportService {
         // 스크래핑은 원본 URL로 수행
         WebScraper.ScrapedData scrapedData = webScraper.scrape(sourceUrl);
 
-        String combined = scrapedData.title() + " " + scrapedData.content();
-        if (!combined.contains(nickname)) {
-            throw new IllegalArgumentException("게시글에 해당 캐릭터 닉네임이 포함되어 있지 않습니다. (캐릭터와 연관이 있는 게시물을 등록해 주세요)");
+        if (!aiSummaryClient.isRelatedToCharacter(nickname, scrapedData.title(), scrapedData.content())) {
+            throw new IllegalArgumentException("게시글이 해당 캐릭터와 관련이 없는 것으로 판단됩니다. 캐릭터와 연관이 있는 게시물을 등록해주세요.");
         }
 
         Report savedReport = reportRepository.save(

@@ -38,6 +38,33 @@ public class AiSummaryClient {
         }
     }
 
+    public boolean isRelatedToCharacter(String nickname, String title, String content) {
+        ChatClient chatClient = chatClientBuilder.build();
+
+        String trimmedContent = content;
+        if (content != null && content.length() > TRIM_LENGTH * 2) {
+            trimmedContent = content.substring(0, TRIM_LENGTH)
+                    + "\n...(중략)...\n"
+                    + content.substring(content.length() - TRIM_LENGTH);
+        }
+
+        String prompt = """
+                다음 게시글이 메이플스토리 캐릭터 '%s'와 관련이 있는지 판단해주세요.
+                닉네임이 정확히 일치하지 않더라도, 문맥상 해당 캐릭터를 언급하고 있다면 관련이 있는 것으로 판단합니다.
+                반드시 "YES" 또는 "NO"로만 답변해주세요.
+
+                게시글 제목: %s
+                게시글 내용: %s
+                """.formatted(nickname, title, trimmedContent);
+
+        String answer = chatClient.prompt()
+                .user(prompt)
+                .call()
+                .content();
+
+        return answer != null && answer.trim().toUpperCase().startsWith("YES");
+    }
+
     public String summarize(List<Report> reports) {
         ChatClient chatClient = chatClientBuilder.build();
 
