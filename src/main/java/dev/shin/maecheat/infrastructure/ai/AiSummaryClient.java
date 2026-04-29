@@ -9,7 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
 import java.util.Set;
@@ -24,6 +24,7 @@ public class AiSummaryClient {
     private final ChatClient.Builder chatClientBuilder;
     private final ReportRepository reportRepository;
     private final MapleCharacterRepository mapleCharacterRepository;
+    private final TransactionTemplate transactionTemplate;
 
     private static final int TRIM_LENGTH = 200;
 
@@ -53,36 +54,56 @@ public class AiSummaryClient {
         }
     }
 
-    @Transactional
-    public void doGenerateSummary(Long characterId) {
+    private void doGenerateSummary(Long characterId) {
         try {
-            MapleCharacter character = mapleCharacterRepository.findById(characterId).orElseThrow();
-            List<Report> reports = reportRepository.findByMapleCharacterIdOrderByUpvotesDesc(characterId);
+            // AI 요약 생성 (트랜잭션 밖에서)
+            List<Report> reports = transactionTemplate.execute(status ->
+                    reportRepository.findByMapleCharacterIdOrderByUpvotesDesc(characterId)
+            );
             String summary = summarize(reports);
-            character.updateAiSummary(summary);
+
+            // DB 반영 (트랜잭션 안에서)
+            transactionTemplate.executeWithoutResult(status -> {
+                MapleCharacter character = mapleCharacterRepository.findById(characterId).orElseThrow();
+                character.updateAiSummary(summary);
+            });
         } catch (Exception e) {
             log.warn("AI 요약 생성 실패 (characterId={}): {}", characterId, e.getMessage());
         }
     }
 
-    public boolean isRelatedToCharacter(String nickname, String title, String content) {
+    public boolean isRelatedToCharacter(String nickname, String title, String content, String aiSummary, List<String> existingTitles) {
         ChatClient chatClient = chatClientBuilder.build();
 
         String trimmedContent = content;
-        if (content != null && content.length() > TRIM_LENGTH * 2) {
-            trimmedContent = content.substring(0, TRIM_LENGTH)
-                    + "\n...(중략)...\n"
-                    + content.substring(content.length() - TRIM_LENGTH);
+//        if (content != null && content.length() > TRIM_LENGTH * 2) {
+//            trimmedContent = content.substring(0, TRIM_LENGTH)
+//                    + "\n...(중략)...\n"
+//                    + content.substring(content.length() - TRIM_LENGTH);
+//        }
+
+        // 기존 맥락 정보 구성
+        StringBuilder context = new StringBuilder();
+        if (aiSummary != null && !aiSummary.isBlank()) {
+            context.append("기존 AI 요약: ").append(aiSummary).append("\n");
+        }
+        if (existingTitles != null && !existingTitles.isEmpty()) {
+            context.append("기존 등록된 게시글 제목들:\n");
+            existingTitles.forEach(t -> context.append("- ").append(t).append("\n"));
         }
 
         String prompt = """
                 다음 게시글이 메이플스토리 캐릭터 '%s'와 관련이 있는지 판단해주세요.
                 닉네임이 정확히 일치하지 않더라도, 문맥상 해당 캐릭터를 언급하고 있다면 관련이 있는 것으로 판단합니다.
+                아래 기존 맥락 정보를 참고하여 판단 정확도를 높여주세요.
                 반드시 "YES" 또는 "NO"로만 답변해주세요.
 
-                게시글 제목: %s
-                게시글 내용: %s
-                """.formatted(nickname, title, trimmedContent);
+                [기존 맥락]
+                %s
+                [새 게시글]
+                제목: %s
+                내용: %s
+                """.formatted(nickname, context.toString(), title, trimmedContent);
 
         String answer = chatClient.prompt()
                 .user(prompt)
