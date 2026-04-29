@@ -36,10 +36,8 @@ public class WebScraper {
 
         // 인벤 추천 수 셀렉터 후보들
         String[] selectors = {
-                "span.recomm-num-up",
-                ".articleHot .num",
-                "#powerRecommCount",
-                ".article-head-info .recommend em"
+                "#bbsRecommendNum1",
+                "a.bttnRecommend"
         };
 
         for (String selector : selectors) {
