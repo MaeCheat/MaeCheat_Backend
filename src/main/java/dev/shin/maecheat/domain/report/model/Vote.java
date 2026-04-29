@@ -33,7 +33,4 @@ public class Vote {
     @Column(nullable = false)
     private VoteType voteType;
 
-    public void changeVoteType(VoteType voteType) {
-        this.voteType = voteType;
-    }
 }
