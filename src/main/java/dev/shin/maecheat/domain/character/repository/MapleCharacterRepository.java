@@ -9,4 +9,5 @@ import java.util.Optional;
 @Repository
 public interface MapleCharacterRepository extends JpaRepository<MapleCharacter, Long> {
     Optional<MapleCharacter> findByNickname(String nickname);
+    Optional<MapleCharacter> findByOcid(String ocid);
 }
