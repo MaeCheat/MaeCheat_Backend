@@ -48,16 +48,8 @@ public class Report {
         this.upvotes++;
     }
 
-    public void cancelUpvote() {
-        if (this.upvotes > 0) this.upvotes--;
-    }
-
     public void downvote() {
         this.downvotes++;
-    }
-
-    public void cancelDownvote() {
-        if (this.downvotes > 0) this.downvotes--;
     }
 
     public int getScore() {
