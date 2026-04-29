@@ -14,7 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.net.URI;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -38,37 +37,18 @@ public class ReportService {
         Report report = reportRepository.findById(reportId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
 
-        Optional<Vote> existingVote = voteRepository.findByReportAndVoterIp(report, voterIp);
-
-        if (existingVote.isPresent()) {
-            Vote vote = existingVote.get();
-
-            if (vote.getVoteType() == voteType) {
-                // 같은 버튼 다시 누름 → 투표 취소
-                voteRepository.delete(vote);
-                if (voteType == VoteType.UP) report.cancelUpvote();
-                else report.cancelDownvote();
-            } else {
-                // 반대 버튼 누름 → 전환
-                if (vote.getVoteType() == VoteType.UP) {
-                    report.cancelUpvote();
-                    report.downvote();
-                } else {
-                    report.cancelDownvote();
-                    report.upvote();
-                }
-                vote.changeVoteType(voteType);
-            }
-        } else {
-            // 첫 투표
-            voteRepository.save(Vote.builder()
-                    .report(report)
-                    .voterIp(voterIp)
-                    .voteType(voteType)
-                    .build());
-            if (voteType == VoteType.UP) report.upvote();
-            else report.downvote();
+        if (voteRepository.findByReportAndVoterIp(report, voterIp).isPresent()) {
+            throw new IllegalStateException("이미 추천 또는 비추천한 게시글입니다.");
         }
+
+        voteRepository.save(Vote.builder()
+                .report(report)
+                .voterIp(voterIp)
+                .voteType(voteType)
+                .build());
+
+        if (voteType == VoteType.UP) report.upvote();
+        else report.downvote();
 
         return report;
     }
