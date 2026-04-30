@@ -54,6 +54,17 @@ public class ReportService {
         if (voteType == VoteType.UP) report.upvote();
         else report.downvote();
 
+        // 비추천이 정확히 5개가 되면 해당 게시글을 제외하고 요약 재생성
+        if (voteType == VoteType.DOWN && report.getDownvotes() == 5) {
+            Long characterId = report.getMapleCharacter().getId();
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    aiSummaryClient.generateSummaryAsync(characterId);
+                }
+            });
+        }
+
         return report;
     }
 
