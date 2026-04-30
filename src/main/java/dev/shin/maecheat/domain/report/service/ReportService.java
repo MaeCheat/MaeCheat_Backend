@@ -8,7 +8,8 @@ import dev.shin.maecheat.domain.report.model.VoteType;
 import dev.shin.maecheat.domain.report.repository.ReportRepository;
 import dev.shin.maecheat.domain.report.repository.VoteRepository;
 import dev.shin.maecheat.infrastructure.ai.AiSummaryClient;
-import dev.shin.maecheat.infrastructure.scraper.WebScraper;
+import dev.shin.maecheat.infrastructure.scraper.CommunityScraper;
+import dev.shin.maecheat.infrastructure.scraper.CommunityScraperResolver;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,7 +25,7 @@ import java.util.List;
 // 쓰기 작업이 필요한 메서드에는 별도로 @Transactional을 적용하여 트랜잭션을 관리할 수 있도록 함
 @Transactional(readOnly = true)
 public class ReportService {
-    private final WebScraper webScraper;
+    private final CommunityScraperResolver scraperResolver;
     private final AiSummaryClient aiSummaryClient;
     private final ReportRepository reportRepository;
     private final VoteRepository voteRepository;
@@ -68,27 +69,6 @@ public class ReportService {
         return report;
     }
 
-    private void validatePostUrl(String url) {
-        try {
-            URI uri = URI.create(url);
-            String host = uri.getHost();
-            String path = uri.getPath();
-
-            // 인벤: /board/{game}/{boardId}/{postId} 형태여야 함
-            if (host != null && host.contains("inven.co.kr")) {
-                String[] segments = path.split("/");
-                // ["", "board", "maple", "5974", "6523271"] → 5개
-                if (segments.length < 5 || !segments[segments.length - 1].matches("\\d+")) {
-                    throw new IllegalArgumentException("게시판 목록이 아닌 개별 게시글 URL을 등록해주세요.");
-                }
-            }
-        } catch (IllegalArgumentException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new IllegalArgumentException("올바른 URL 형식이 아닙니다.");
-        }
-    }
-
     private String stripQueryString(String url) {
         try {
             URI uri = URI.create(url);
@@ -105,8 +85,11 @@ public class ReportService {
         MapleCharacter character = mapleCharacterRepository.findByNickname(nickname)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 캐릭터입니다"));
 
-        // 게시판 목록이 아닌 개별 게시글 URL인지 검증
-        validatePostUrl(sourceUrl);
+        // URL에 맞는 스크래퍼 찾기
+        CommunityScraper scraper = scraperResolver.resolve(sourceUrl);
+
+        // URL 형식 검증
+        scraper.validateUrl(sourceUrl);
 
         // 쿼리 스트링 제거한 URL로 중복 검사 수행
         String cleanUrl = stripQueryString(sourceUrl);
@@ -115,12 +98,13 @@ public class ReportService {
             throw new IllegalStateException("이미 등록된 URL입니다.");
         }
 
-        // 스크래핑은 원본 URL로 수행
-        WebScraper.ScrapedData scrapedData = webScraper.scrape(sourceUrl);
+        // 스크래핑
+        CommunityScraper.ScrapedData scrapedData = scraper.scrape(sourceUrl);
 
-        // 인벤 게시글은 추천 30 이상만 등록 가능
-        if (scrapedData.upvotes() >= 0 && scrapedData.upvotes() < 30) {
-            throw new IllegalArgumentException("추천 30개 이상인 게시글만 등록할 수 있습니다. (현재 " + scrapedData.upvotes() + "개)");
+        // 최소 추천 수 검증
+        int minUpvotes = scraper.getMinUpvotes();
+        if (minUpvotes > 0 && scrapedData.upvotes() >= 0 && scrapedData.upvotes() < minUpvotes) {
+            throw new IllegalArgumentException("추천 " + minUpvotes + "개 이상인 게시글만 등록할 수 있습니다. (현재 " + scrapedData.upvotes() + "개)");
         }
 
         // 기존 요약 + 게시글 제목 목록을 AI 연관성 판단에 활용
