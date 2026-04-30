@@ -54,6 +54,17 @@ public class ReportService {
         if (voteType == VoteType.UP) report.upvote();
         else report.downvote();
 
+        // 비추천이 정확히 5개가 되면 해당 게시글을 제외하고 요약 재생성
+        if (voteType == VoteType.DOWN && report.getDownvotes() == 5) {
+            Long characterId = report.getMapleCharacter().getId();
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    aiSummaryClient.generateSummaryAsync(characterId);
+                }
+            });
+        }
+
         return report;
     }
 
@@ -107,9 +118,19 @@ public class ReportService {
         // 스크래핑은 원본 URL로 수행
         WebScraper.ScrapedData scrapedData = webScraper.scrape(sourceUrl);
 
-        String combined = scrapedData.title() + " " + scrapedData.content();
-        if (!combined.contains(nickname)) {
-            throw new IllegalArgumentException("게시글에 해당 캐릭터 닉네임이 포함되어 있지 않습니다. (캐릭터와 연관이 있는 게시물을 등록해 주세요)");
+        // 인벤 게시글은 추천 30 이상만 등록 가능
+        if (scrapedData.upvotes() >= 0 && scrapedData.upvotes() < 30) {
+            throw new IllegalArgumentException("추천 30개 이상인 게시글만 등록할 수 있습니다. (현재 " + scrapedData.upvotes() + "개)");
+        }
+
+        // 기존 요약 + 게시글 제목 목록을 AI 연관성 판단에 활용
+        List<String> existingTitles = reportRepository.findByMapleCharacterIdOrderByUpvotesDesc(character.getId())
+                .stream()
+                .map(Report::getTitle)
+                .toList();
+
+        if (!aiSummaryClient.isRelatedToCharacter(nickname, scrapedData.title(), scrapedData.content(), character.getAiSummary(), existingTitles)) {
+            throw new IllegalArgumentException("게시글이 해당 캐릭터와 관련이 없는 것으로 판단됩니다. 캐릭터와 연관이 있는 게시물을 등록해주세요.");
         }
 
         Report savedReport = reportRepository.save(
