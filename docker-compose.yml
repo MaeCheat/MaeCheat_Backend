@@ -18,8 +18,8 @@ services:
   app:
     build: .
     container_name: maecheat-app
-    ports:
-      - "8080:8080"
+    expose:
+      - "8080"
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/maecheat
       SPRING_DATASOURCE_USERNAME: root
@@ -30,5 +30,20 @@ services:
       mysql:
         condition: service_healthy
 
+  caddy:
+    image: caddy:2
+    container_name: maecheat-caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - app
+
 volumes:
   mysql-data:
+  caddy-data:
+  caddy-config:
