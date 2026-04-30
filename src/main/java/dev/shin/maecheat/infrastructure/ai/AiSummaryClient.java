@@ -60,9 +60,9 @@ public class AiSummaryClient {
             List<Report> reports = transactionTemplate.execute(status ->
                     reportRepository.findByMapleCharacterIdOrderByUpvotesDesc(characterId)
             );
-            // 비추천 5개 이상인 게시글은 요약에서 제외
+            // 비추천 - 추천 > 5인 게시글은 요약에서 제외
             List<Report> filtered = reports.stream()
-                    .filter(r -> r.getDownvotes() < 5)
+                    .filter(r -> !r.isHidden())
                     .toList();
             String summary = summarize(filtered);
 

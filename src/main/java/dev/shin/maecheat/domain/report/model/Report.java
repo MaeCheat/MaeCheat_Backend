@@ -57,6 +57,6 @@ public class Report {
     }
 
     public boolean isHidden() {
-        return downvotes >= 5 && downvotes > upvotes * 2;
+        return (downvotes - upvotes) > 5;
     }
 }
