@@ -41,10 +41,15 @@ public class InvenScraper implements CommunityScraper {
         }
     }
 
+    private String convertToDesktopUrl(String url) {
+        return url.replace("://m.inven.co.kr", "://www.inven.co.kr");
+    }
+
     @Override
     public ScrapedData scrape(String url) {
         try {
-            Document doc = Jsoup.connect(url)
+            String desktopUrl = convertToDesktopUrl(url);
+            Document doc = Jsoup.connect(desktopUrl)
                     .userAgent("Mozilla/5.0")
                     .timeout(5000)
                     .get();
@@ -81,6 +86,6 @@ public class InvenScraper implements CommunityScraper {
             }
         }
 
-        return -1;
+        throw new IllegalArgumentException("추천 수를 확인할 수 없습니다. PC 버전 URL로 다시 시도해주세요.");
     }
 }
