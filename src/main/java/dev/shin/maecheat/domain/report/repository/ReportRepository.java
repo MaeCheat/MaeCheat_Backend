@@ -16,4 +16,7 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
 
     @org.springframework.data.jpa.repository.Query("SELECT DISTINCT r.mapleCharacter.id FROM Report r")
     List<Long> findDistinctCharacterIds();
+
+    @org.springframework.data.jpa.repository.Query("SELECT DISTINCT r.mapleCharacter.id FROM Report r WHERE r.mapleCharacter.aiSummary IS NULL")
+    List<Long> findDistinctCharacterIdsWithoutSummary();
 }

@@ -31,6 +31,7 @@ public class MapleCharacter {
     @Column(nullable = false)
     private String nickname;
 
+    @Column(columnDefinition = "TEXT")
     private String aiSummary;
 
     // 닉네임 변경

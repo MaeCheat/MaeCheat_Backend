@@ -34,10 +34,10 @@ public class AiSummaryClient {
     private final Set<Long> pendingRerun = ConcurrentHashMap.newKeySet();
 
     public void regenerateAll() {
-        List<Long> characterIds = reportRepository.findDistinctCharacterIds();
+        List<Long> characterIds = reportRepository.findDistinctCharacterIdsWithoutSummary();
         log.info("AI 요약 일괄 재생성 시작 ({}건)", characterIds.size());
         for (Long id : characterIds) {
-            generateSummaryAsync(id);
+            doGenerateSummary(id);
         }
     }
 
