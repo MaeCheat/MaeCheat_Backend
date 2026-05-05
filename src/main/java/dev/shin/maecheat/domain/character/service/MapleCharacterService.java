@@ -1,5 +1,6 @@
 package dev.shin.maecheat.domain.character.service;
 
+import dev.shin.maecheat.domain.apicall.service.ApiCallLogService;
 import dev.shin.maecheat.domain.character.dto.CharacterResponse;
 import dev.shin.maecheat.domain.character.model.MapleCharacter;
 import dev.shin.maecheat.domain.character.repository.MapleCharacterRepository;
@@ -14,9 +15,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class MapleCharacterService {
     private final MapleCharacterRepository mapleCharacterRepository;
     private final NexonApiClient nexonApiClient;
+    private final ApiCallLogService apiCallLogService;
 
     @Transactional
     public CharacterResponse getCharacterBasic(String nickname) {
+        apiCallLogService.incrementCount();
         String ocid = nexonApiClient.getCharacterId(nickname).ocid();
 
         // ocid가 같은데 닉네임이 다른 경우 닉네임 업데이트
