@@ -55,8 +55,11 @@ public class ReportService {
         if (voteType == VoteType.UP) report.upvote();
         else report.downvote();
 
-        // 비추천으로 인해 숨김 처리가 되면 요약 재생성
-        if (voteType == VoteType.DOWN && report.isHidden()) {
+        // 요약 재생성 조건: 숨김 처리되거나, 추천 점수가 5 배수에 도달했을 때
+        boolean shouldRegenerate = (voteType == VoteType.DOWN && report.isHidden())
+                || (report.getScore() > 0 && report.getScore() % 5 == 0);
+
+        if (shouldRegenerate) {
             Long characterId = report.getMapleCharacter().getId();
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
