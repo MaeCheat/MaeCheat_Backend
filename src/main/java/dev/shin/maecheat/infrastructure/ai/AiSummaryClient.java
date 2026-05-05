@@ -33,14 +33,6 @@ public class AiSummaryClient {
     // 실행 중에 추가 요청이 들어와서 재실행이 필요한 캐릭터 ID
     private final Set<Long> pendingRerun = ConcurrentHashMap.newKeySet();
 
-    public void regenerateAll() {
-        List<Long> characterIds = reportRepository.findDistinctCharacterIdsWithoutSummary();
-        log.info("AI 요약 일괄 재생성 시작 ({}건)", characterIds.size());
-        for (Long id : characterIds) {
-            doGenerateSummary(id);
-        }
-    }
-
     @Async
     public void generateSummaryAsync(Long characterId) {
         // 이미 실행 중이면 재실행 플래그만 세우고 리턴
