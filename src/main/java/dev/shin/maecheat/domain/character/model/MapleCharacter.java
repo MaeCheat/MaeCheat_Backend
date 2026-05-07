@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Builder
 @Getter
@@ -33,6 +35,19 @@ public class MapleCharacter {
 
     @Column(columnDefinition = "TEXT")
     private String aiSummary;
+
+    // 본인 요청 숨김 만료 시각 (null이면 숨김 아님)
+    private LocalDateTime hiddenUntil;
+
+    // 현재 숨김 상태인지 확인
+    public boolean isOwnerHidden() {
+        return hiddenUntil != null && LocalDateTime.now().isBefore(hiddenUntil);
+    }
+
+    // 숨김 요청 (days일 동안)
+    public void requestHide(int days) {
+        this.hiddenUntil = LocalDateTime.now().plusDays(days);
+    }
 
     // 닉네임 변경
     public void updateNickname(String newNickname) {

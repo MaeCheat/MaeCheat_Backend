@@ -39,6 +39,13 @@ public class MapleCharacterService {
                 ));
 
         NexonCharacterBasicResponseDto nexon = nexonApiClient.getCharacterBasic(ocid);
-        return CharacterResponse.of(nexon, character.getAiSummary());
+        return CharacterResponse.of(nexon, character.getAiSummary(), character.isOwnerHidden());
+    }
+
+    @Transactional
+    public void requestHide(String nickname) {
+        MapleCharacter character = mapleCharacterRepository.findByNickname(nickname)
+                .orElseThrow(() -> new IllegalArgumentException("캐릭터를 찾을 수 없습니다: " + nickname));
+        character.requestHide(14); // 2주
     }
 }
