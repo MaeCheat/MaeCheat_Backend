@@ -4,6 +4,7 @@ import dev.shin.maecheat.domain.apicall.service.ApiCallLogService;
 import dev.shin.maecheat.domain.character.dto.CharacterResponse;
 import dev.shin.maecheat.domain.character.model.MapleCharacter;
 import dev.shin.maecheat.domain.character.repository.MapleCharacterRepository;
+import dev.shin.maecheat.domain.hiderequest.repository.HideRequestRepository;
 import dev.shin.maecheat.infrastructure.nexon.client.NexonApiClient;
 import dev.shin.maecheat.infrastructure.nexon.dto.NexonCharacterBasicResponseDto;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ public class MapleCharacterService {
     private final MapleCharacterRepository mapleCharacterRepository;
     private final NexonApiClient nexonApiClient;
     private final ApiCallLogService apiCallLogService;
+    private final HideRequestRepository hideRequestRepository;
 
     @Transactional
     public CharacterResponse getCharacterBasic(String nickname) {
@@ -39,13 +41,8 @@ public class MapleCharacterService {
                 ));
 
         NexonCharacterBasicResponseDto nexon = nexonApiClient.getCharacterBasic(ocid);
-        return CharacterResponse.of(nexon, character.getAiSummary(), character.isOwnerHidden());
+        boolean hidePending = hideRequestRepository.existsByNicknameAndProcessedFalse(nickname);
+        return CharacterResponse.of(nexon, character.getAiSummary(), character.isOwnerHidden(), hidePending);
     }
 
-    @Transactional
-    public void requestHide(String nickname) {
-        MapleCharacter character = mapleCharacterRepository.findByNickname(nickname)
-                .orElseThrow(() -> new IllegalArgumentException("캐릭터를 찾을 수 없습니다: " + nickname));
-        character.requestHide(14); // 2주
-    }
 }

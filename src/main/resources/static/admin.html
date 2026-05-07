@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MaeCheat Admin</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #0f0f14; color: #e0e0e0; padding: 2rem; }
+        h1 { font-size: 1.25rem; margin-bottom: 1.5rem; color: #fff; }
+        .login { max-width: 300px; margin: 4rem auto; }
+        .login input { width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid #333; background: #1a1a24; color: #fff; margin-bottom: 0.75rem; }
+        .login button { width: 100%; padding: 0.75rem; border-radius: 8px; border: none; background: #6366f1; color: #fff; cursor: pointer; font-weight: 600; }
+        .login button:hover { background: #4f46e5; }
+        .card { background: #1a1a24; border: 1px solid #2a2a3a; border-radius: 12px; padding: 1.25rem; margin-bottom: 0.75rem; }
+        .card .nickname { font-weight: 700; font-size: 1rem; }
+        .card .meta { font-size: 0.8rem; color: #888; margin-top: 0.25rem; }
+        .actions { margin-top: 0.75rem; display: flex; gap: 0.5rem; }
+        .actions button { padding: 0.5rem 1rem; border-radius: 6px; border: none; cursor: pointer; font-size: 0.8rem; font-weight: 600; }
+        .btn-approve { background: #22c55e20; color: #4ade80; border: 1px solid #22c55e40 !important; }
+        .btn-approve:hover { background: #22c55e30; }
+        .btn-reject { background: #ef444420; color: #f87171; border: 1px solid #ef444440 !important; }
+        .btn-reject:hover { background: #ef444430; }
+        .empty { color: #666; font-size: 0.9rem; text-align: center; padding: 3rem; }
+        .toast { position: fixed; top: 1rem; right: 1rem; padding: 0.75rem 1.25rem; border-radius: 8px; background: #22c55e; color: #fff; font-size: 0.85rem; font-weight: 500; opacity: 0; transition: opacity 0.3s; }
+        .toast.show { opacity: 1; }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    <div id="toast" class="toast"></div>
+
+    <script>
+        let adminKey = localStorage.getItem('maecheat_admin_key') || '';
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2000);
+        }
+
+        function renderLogin() {
+            document.getElementById('app').innerHTML = `
+                <div class="login">
+                    <h1>MaeCheat Admin</h1>
+                    <input type="password" id="keyInput" placeholder="관리자 키 입력" />
+                    <button onclick="login()">접속</button>
+                </div>
+            `;
+        }
+
+        function login() {
+            adminKey = document.getElementById('keyInput').value;
+            localStorage.setItem('maecheat_admin_key', adminKey);
+            loadRequests();
+        }
+
+        async function loadRequests() {
+            try {
+                const res = await fetch(`/admin/hide-requests?key=${encodeURIComponent(adminKey)}`);
+                if (res.status === 403) {
+                    localStorage.removeItem('maecheat_admin_key');
+                    adminKey = '';
+                    renderLogin();
+                    return;
+                }
+                const data = await res.json();
+                renderRequests(data);
+            } catch (e) {
+                document.getElementById('app').innerHTML = '<p class="empty">서버 연결 실패</p>';
+            }
+        }
+
+        function renderRequests(requests) {
+            if (requests.length === 0) {
+                document.getElementById('app').innerHTML = `
+                    <h1>숨김 요청 관리</h1>
+                    <p class="empty">처리 대기 중인 요청이 없습니다.</p>
+                `;
+                return;
+            }
+
+            const cards = requests.map(r => `
+                <div class="card" id="req-${r.id}">
+                    <div class="nickname">
+                        <a href="https://maecheat.com/characters/${encodeURIComponent(r.nickname)}" target="_blank" rel="noopener" style="color:#a5b4fc;text-decoration:none;">${r.nickname}</a>
+                    </div>
+                    <div class="meta">사유: ${r.reason || '-'}</div>
+                    <div class="meta">IP: ${r.requesterIp} | ${new Date(r.requestedAt).toLocaleString('ko-KR')}</div>
+                    <div class="actions">
+                        <button class="btn-approve" onclick="approve(${r.id})">승인 (2주 숨김)</button>
+                        <button class="btn-reject" onclick="reject(${r.id})">거절</button>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('app').innerHTML = `<h1>숨김 요청 관리 (${requests.length}건)</h1>${cards}`;
+        }
+
+        async function approve(id) {
+            const res = await fetch(`/admin/hide-requests/${id}/approve?key=${encodeURIComponent(adminKey)}`, { method: 'POST' });
+            const data = await res.json();
+            showToast(data.message);
+            document.getElementById(`req-${id}`)?.remove();
+        }
+
+        async function reject(id) {
+            const res = await fetch(`/admin/hide-requests/${id}/reject?key=${encodeURIComponent(adminKey)}`, { method: 'POST' });
+            const data = await res.json();
+            showToast(data.message);
+            document.getElementById(`req-${id}`)?.remove();
+        }
+
+        // 초기화
+        if (adminKey) {
+            loadRequests();
+        } else {
+            renderLogin();
+        }
+    </script>
+</body>
+</html>

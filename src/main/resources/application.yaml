@@ -16,7 +16,11 @@ spring:
         api-key: ${GEMINI_API_KEY}
         chat:
           options:
-            model: gemini-3-flash-preview
+            model: gemini-3.1-pro-preview
+
+app:
+  admin:
+    key: ${ADMIN_KEY}
 
 nexon:
   api:

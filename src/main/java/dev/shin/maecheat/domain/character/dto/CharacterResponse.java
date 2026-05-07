@@ -11,9 +11,10 @@ public record CharacterResponse(
         @JsonProperty("character_guild_name") String characterGuildName,
         @JsonProperty("character_image") String characterImage,
         @JsonProperty("ai_summary") String aiSummary,
-        @JsonProperty("owner_hidden") boolean ownerHidden
+        @JsonProperty("owner_hidden") boolean ownerHidden,
+        @JsonProperty("hide_pending") boolean hidePending
 ) {
-    public static CharacterResponse of(NexonCharacterBasicResponseDto nexon, String aiSummary, boolean ownerHidden) {
+    public static CharacterResponse of(NexonCharacterBasicResponseDto nexon, String aiSummary, boolean ownerHidden, boolean hidePending) {
         return new CharacterResponse(
                 nexon.characterName(),
                 nexon.worldName(),
@@ -22,7 +23,8 @@ public record CharacterResponse(
                 nexon.characterGuildName(),
                 nexon.characterImage(),
                 aiSummary,
-                ownerHidden
+                ownerHidden,
+                hidePending
         );
     }
 }
